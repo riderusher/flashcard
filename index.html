@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcard Review</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+  h1 { text-align: center; }
+  .flashcard { border: 2px solid #333; padding: 20px; margin: 10px 0; border-radius: 8px; background: #fff; }
+  button { padding: 8px 15px; margin: 5px; cursor: pointer; }
+  #card-view { font-size: 1.2em; text-align: center; margin: 20px 0; }
+  input, textarea { width: 100%; padding: 8px; margin: 5px 0; }
+</style>
+</head>
+<body>
+
+<h1>Flashcard Review</h1>
+
+<div>
+  <h2>Add Flashcard</h2>
+  <textarea id="flashcard-text" placeholder="Enter flashcard content"></textarea>
+  <button onclick="addFlashcard()">Add Card</button>
+  <button onclick="clearAll()">Clear All</button>
+</div>
+
+<div>
+  <h2>Flashcards List</h2>
+  <div id="flashcards-list"></div>
+</div>
+
+<div>
+  <h2>Review Mode</h2>
+  <div id="card-view">No cards yet.</div>
+  <button onclick="prevCard()">Previous</button>
+  <button onclick="nextCard()">Next</button>
+</div>
+
+<script>
+let flashcards = [];
+let currentIndex = 0;
+
+// Add a new flashcard
+function addFlashcard() {
+  const text = document.getElementById('flashcard-text').value.trim();
+  if(text !== "") {
+    flashcards.push(text);
+    document.getElementById('flashcard-text').value = '';
+    updateList();
+    if(flashcards.length === 1) showCard(0);
+  } else {
+    alert('Please enter some text for the flashcard.');
+  }
+}
+
+// Display all flashcards in list
+function updateList() {
+  const listDiv = document.getElementById('flashcards-list');
+  listDiv.innerHTML = '';
+  flashcards.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.className = 'flashcard';
+    div.textContent = card;
+    listDiv.appendChild(div);
+  });
+}
+
+// Clear all flashcards
+function clearAll() {
+  if(confirm('Are you sure you want to clear all flashcards?')) {
+    flashcards = [];
+    currentIndex = 0;
+    document.getElementById('flashcards-list').innerHTML = '';
+    document.getElementById('card-view').textContent = 'No cards yet.';
+  }
+}
+
+// Show a card in review mode
+function showCard(index) {
+  if(flashcards.length === 0) {
+    document.getElementById('card-view').textContent = 'No cards yet.';
+    return;
+  }
+  currentIndex = (index + flashcards.length) % flashcards.length;
+  document.getElementById('card-view').textContent = flashcards[currentIndex];
+}
+
+// Navigate review
+function nextCard() { showCard(currentIndex + 1); }
+function prevCard() { showCard(currentIndex - 1); }
+
+</script>
+</body>
+</html>
