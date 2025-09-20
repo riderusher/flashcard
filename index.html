@@ -3,92 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flashcard Review</title>
+<title>Spanish-English Flashcards</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-  h1 { text-align: center; }
-  .flashcard { border: 2px solid #333; padding: 20px; margin: 10px 0; border-radius: 8px; background: #fff; }
-  button { padding: 8px 15px; margin: 5px; cursor: pointer; }
-  #card-view { font-size: 1.2em; text-align: center; margin: 20px 0; }
-  input, textarea { width: 100%; padding: 8px; margin: 5px 0; }
+  .card-flip { perspective: 1000px; }
+  .card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+  .card-flipped .card-inner { transform: rotateY(180deg); }
+  .card-front, .card-back { backface-visibility: hidden; }
+  .card-back { transform: rotateY(180deg); }
 </style>
 </head>
-<body>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
 
-<h1>Flashcard Review</h1>
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="text-center mb-6">
+    <h1 class="text-4xl font-bold text-indigo-800 mb-2">📚 Spanish-English Flashcards</h1>
+    <p class="text-gray-600">Paste your Spanish-English pairs below to generate flashcards</p>
+  </div>
 
-<div>
-  <h2>Add Flashcard</h2>
-  <textarea id="flashcard-text" placeholder="Enter flashcard content"></textarea>
-  <button onclick="addFlashcard()">Add Card</button>
-  <button onclick="clearAll()">Clear All</button>
-</div>
+  <!-- Input Area -->
+  <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+    <textarea id="pairs-input" placeholder="Spanish|English" class="w-full h-40 p-4 border-2 border-gray-200 rounded-xl resize-none"></textarea>
+    <div class="flex justify-end mt-3 gap-3">
+      <button id="generate-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium">Generate Flashcards</button>
+      <button id="clear-btn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium">Clear Flashcards</button>
+    </div>
+  </div>
 
-<div>
-  <h2>Flashcards List</h2>
-  <div id="flashcards-list"></div>
-</div>
+  <!-- Progress Bar -->
+  <div class="mb-6">
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-sm font-medium text-gray-700">Progress</span>
+      <span class="text-sm text-gray-500" id="progress-text">0 / 0</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-2">
+      <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" id="progress-bar" style="width: 0%"></div>
+    </div>
+  </div>
 
-<div>
-  <h2>Review Mode</h2>
-  <div id="card-view">No cards yet.</div>
-  <button onclick="prevCard()">Previous</button>
-  <button onclick="nextCard()">Next</button>
+  <!-- Flashcard -->
+  <div class="card-flip mb-8" id="flashcard" style="display:none">
+    <div class="card-inner relative w-full h-80">
+      <div class="card-front absolute inset-0 bg-white rounded-xl shadow-lg border-2 border-indigo-200 p-8 flex flex-col justify-center items-center">
+        <div class="text-center">
+          <div class="text-sm font-semibold text-indigo-600 mb-4">🇪🇸 ESPAÑOL</div>
+          <p class="text-xl font-medium text-gray-800 leading-relaxed" id="spanish-text"></p>
+        </div>
+        <div class="absolute bottom-4 text-sm text-gray-500">Click to reveal translation</div>
+      </div>
+      <div class="card-back absolute inset-0 bg-indigo-600 rounded-xl shadow-lg p-8 flex flex-col justify-center items-center text-white">
+        <div class="text-center">
+          <div class="text-sm font-semibold text-indigo-200 mb-4">🇺🇸 ENGLISH</div>
+          <p class="text-xl font-medium leading-relaxed" id="english-text"></p>
+        </div>
+        <div class="absolute bottom-4 text-sm text-indigo-200">Click to flip back</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="flex justify-center gap-4 mb-6">
+    <button id="prev-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed">← Previous</button>
+    <button id="shuffle-btn" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-medium">🔀 Shuffle</button>
+    <button id="next-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">Next →</button>
+  </div>
+
+  <!-- Study Mode Toggle -->
+  <div class="text-center mb-6">
+    <div class="inline-flex bg-white rounded-lg p-1 shadow-md">
+      <button id="spanish-first" class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-indigo-600 text-white">Spanish First</button>
+      <button id="english-first" class="px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-800">English First</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 gap-4 max-w-md mx-auto">
+    <div class="bg-white rounded-lg p-4 text-center shadow-md">
+      <div class="text-2xl font-bold text-indigo-600" id="cards-studied">0</div>
+      <div class="text-sm text-gray-600">Cards Studied</div>
+    </div>
+    <div class="bg-white rounded-lg p-4 text-center shadow-md">
+      <div class="text-2xl font-bold text-green-600" id="total-cards">0</div>
+      <div class="text-sm text-gray-600">Total Cards</div>
+    </div>
+  </div>
 </div>
 
 <script>
 let flashcards = [];
 let currentIndex = 0;
+let studiedCards = new Set();
+let spanishFirst = true;
 
-// Add a new flashcard
-function addFlashcard() {
-  const text = document.getElementById('flashcard-text').value.trim();
-  if(text !== "") {
-    flashcards.push(text);
-    document.getElementById('flashcard-text').value = '';
-    updateList();
-    if(flashcards.length === 1) showCard(0);
-  } else {
-    alert('Please enter some text for the flashcard.');
-  }
+const flashcardEl = document.getElementById('flashcard');
+const spanishText = document.getElementById('spanish-text');
+const englishText = document.getElementById('english-text');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const shuffleBtn = document.getElementById('shuffle-btn');
+const spanishFirstBtn = document.getElementById('spanish-first');
+const englishFirstBtn = document.getElementById('english-first');
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
+const cardsStudiedEl = document.getElementById('cards-studied');
+const totalCardsEl = document.getElementById('total-cards');
+const generateBtn = document.getElementById('generate-btn');
+const clearBtn = document.getElementById('clear-btn');
+const pairsInput = document.getElementById('pairs-input');
+
+function updateCard() {
+    if(flashcards.length === 0) return;
+    const card = flashcards[currentIndex];
+    spanishText.textContent = card.spanish;
+    englishText.textContent = card.english;
+    flashcardEl.classList.remove('card-flipped');
+
+    const progress = ((currentIndex + 1)/flashcards.length)*100;
+    progressBar.style.width = progress + '%';
+    progressText.textContent = `${currentIndex + 1} / ${flashcards.length}`;
+    prevBtn.disabled = currentIndex===0;
+    nextBtn.disabled = currentIndex===flashcards.length-1;
+
+    studiedCards.add(currentIndex);
+    cardsStudiedEl.textContent = studiedCards.size;
+
+    updateCardOrientation();
 }
 
-// Display all flashcards in list
-function updateList() {
-  const listDiv = document.getElementById('flashcards-list');
-  listDiv.innerHTML = '';
-  flashcards.forEach((card, i) => {
-    const div = document.createElement('div');
-    div.className = 'flashcard';
-    div.textContent = card;
-    listDiv.appendChild(div);
-  });
+function updateCardOrientation() {
+    if(spanishFirst) {
+        document.querySelector('.card-front .text-sm').textContent = '🇪🇸 ESPAÑOL';
+        document.querySelector('.card-back .text-sm').textContent = '🇺🇸 ENGLISH';
+        spanishText.textContent = flashcards[currentIndex].spanish;
+        englishText.textContent = flashcards[currentIndex].english;
+    } else {
+        document.querySelector('.card-front .text-sm').textContent = '🇺🇸 ENGLISH';
+        document.querySelector('.card-back .text-sm').textContent = '🇪🇸 ESPAÑOL';
+        spanishText.textContent = flashcards[currentIndex].english;
+        englishText.textContent = flashcards[currentIndex].spanish;
+    }
 }
 
-// Clear all flashcards
-function clearAll() {
-  if(confirm('Are you sure you want to clear all flashcards?')) {
-    flashcards = [];
-    currentIndex = 0;
-    document.getElementById('flashcards-list').innerHTML = '';
-    document.getElementById('card-view').textContent = 'No cards yet.';
-  }
-}
-
-// Show a card in review mode
-function showCard(index) {
-  if(flashcards.length === 0) {
-    document.getElementById('card-view').textContent = 'No cards yet.';
-    return;
-  }
-  currentIndex = (index + flashcards.length) % flashcards.length;
-  document.getElementById('card-view').textContent = flashcards[currentIndex];
-}
-
-// Navigate review
-function nextCard() { showCard(currentIndex + 1); }
-function prevCard() { showCard(currentIndex - 1); }
-
-</script>
-</body>
-</html>
+flashcardEl.addEventListener('click',()=>flashcardEl.classList.toggle('card-flipped'));
+prevBtn.addEventListener('click',()=>{if(currentIndex>0){currentIndex--; updateCard();}});
+nextBtn.addEventListener('click',()=>{if(currentIndex<flashcards.length-1){currentIndex++; updateCard();}});
+shuffleBtn.addEventListener('click',()=>{
+    for(let i=flashcards.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [flashcards[i], flashcards
