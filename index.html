@@ -62,8 +62,13 @@
             <p class="text-gray-600 mt-2 text-lg">Interactive vocabulary learning made easy</p>
         </header>
 
+        <!-- Add/Edit Cards Button (Initially Hidden) -->
+        <div id="edit-cards-container" class="hidden text-center mb-8">
+            <button id="edit-cards-btn" class="bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-300 active:scale-95 transition-all shadow">Add / Edit Cards</button>
+        </div>
+
         <!-- Input Section -->
-        <div class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg mb-8">
+        <div id="input-section" class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg mb-8">
             <label for="card-input" class="block text-gray-700 font-medium mb-2">Enter Spanish|English pairs (one per line):</label>
             <textarea id="card-input" rows="6" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 transition" placeholder="hola|hello&#10;adiós|goodbye&#10;gato|cat"></textarea>
             <div class="flex flex-col sm:flex-row gap-4 mt-4">
@@ -119,6 +124,9 @@
         const generateBtn = document.getElementById('generate-btn');
         const clearBtn = document.getElementById('clear-btn');
         const cardInput = document.getElementById('card-input');
+        const inputSection = document.getElementById('input-section');
+        const editCardsContainer = document.getElementById('edit-cards-container');
+        const editCardsBtn = document.getElementById('edit-cards-btn');
         const flashcardContainer = document.getElementById('flashcard-container');
         const card = document.getElementById('card');
         const cardInner = document.getElementById('card-inner');
@@ -190,6 +198,9 @@
             cards = createdCards;
             currentIndex = 0;
             flashcardContainer.classList.remove('hidden');
+            inputSection.classList.add('hidden');
+            editCardsContainer.classList.remove('hidden');
+            card.classList.remove('flipped'); // Ensure first card is the front
             updateCardDisplay();
         }
 
@@ -202,7 +213,7 @@
             
             const currentCard = cards[currentIndex];
 
-            // NOTE: The logic to remove 'flipped' class is now moved to the navigation functions
+            // NOTE: The logic to remove 'flipped' class is now in the navigation/action functions
             // to prevent a glimpse of the answer.
 
             if (studyMode === 'spanish') {
@@ -269,23 +280,44 @@
 
         // Fisher-Yates shuffle algorithm
         function shuffleDeck() {
-            if (cards.length < 2) return;
+            if (cards.length < 2) {
+                if (cards.length > 0) showNotification('Need at least 2 cards to shuffle.');
+                return;
+            };
 
             for (let i = cards.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [cards[i], cards[j]] = [cards[j], cards[i]]; // Swap elements
             }
             currentIndex = 0;
-            updateCardDisplay();
-            showNotification('Deck shuffled!');
+            
+            // Flip back to front before showing the new shuffled card
+            const isFlipped = card.classList.contains('flipped');
+            if (isFlipped) {
+                card.classList.remove('flipped');
+                setTimeout(() => {
+                    updateCardDisplay();
+                    showNotification('Deck shuffled!');
+                }, 300);
+            } else {
+                updateCardDisplay();
+                showNotification('Deck shuffled!');
+            }
         }
 
-        // Clear all cards and reset UI
+        // Clear all cards and reset UI to initial state
         function clearAll() {
             cards = [];
             currentIndex = 0;
             cardInput.value = '';
             flashcardContainer.classList.add('hidden');
+            inputSection.classList.remove('hidden');
+            editCardsContainer.classList.add('hidden');
+        }
+
+        // Toggle the input section visibility
+        function toggleInputSection() {
+            inputSection.classList.toggle('hidden');
         }
 
         // Switch study mode
@@ -302,7 +334,15 @@
                 modeSpanishBtn.classList.add('bg-white', 'text-gray-700');
                 modeSpanishBtn.classList.remove('bg-blue-500', 'text-white', 'ring-4', 'ring-blue-500/50');
             }
-            updateCardDisplay();
+            
+            // Flip back to front before updating content for the new mode
+            const isFlipped = card.classList.contains('flipped');
+            if (isFlipped) {
+                card.classList.remove('flipped');
+                setTimeout(updateCardDisplay, 300);
+            } else {
+                updateCardDisplay();
+            }
         }
 
         // Keyboard navigation
@@ -323,6 +363,7 @@
         // --- Event Listeners ---
         generateBtn.addEventListener('click', generateFlashcards);
         clearBtn.addEventListener('click', clearAll);
+        editCardsBtn.addEventListener('click', toggleInputSection);
         
         card.addEventListener('click', flipCard);
         prevBtn.addEventListener('click', showPrevCard);
@@ -337,6 +378,4 @@
     </script>
 </body>
 </html>
-
-
 
